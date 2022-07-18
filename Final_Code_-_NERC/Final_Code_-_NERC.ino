@@ -64,30 +64,54 @@ void setup() {
 }
 
 void loop() {
-  
-fl_SensorState = analogRead(fl_IR);
-fr_SensorState = analogRead(fr_IR);
+fl_SensorState = digitalRead(fl_IR);
+fr_SensorState = digitalRead(fr_IR);
 
-if (fr_SensorState > 500 && fl_SensorState < 500)  {  //Turn Right
+if (fr_SensorState > 1 && fl_SensorState < 1)  {  //Turn Right
   right(255);
 }
-else if (fr_SensorState < 500 && fl_SensorState > 500) {  //Left
+else if (fr_SensorState < 1 && fl_SensorState > 1) {  //Left
   left(255);
 }
-else if (fr_SensorState > 500 && fl_SensorState > 500) {  //Forward
+else if (fr_SensorState > 1 && fl_SensorState > 1) {  //Forward
   forward(255);
 }
 
-else if (fr_SensorState < 500 && fl_SensorState < 500) {   //Stop 
+else if (fr_SensorState < 1 && fl_SensorState < 1) {   //Stop 
   stop_all();
+  allign();
   harvest();
 }
-stop_all();
-delay(200);
 
+stop_all();
+delay(100);
 }
 
-void calc_distance(){
+void allign(){
+  do { 
+    l_SensorState = digitalRead(l_IR);
+    r_SensorState = digitalRead(r_IR);
+    if (r_SensorState > 1 && l_SensorState < 1){
+      right(100);
+    }
+    else if (r_SensorState > 1 && l_SensorState < 1){
+      left(100);
+    }
+    else if (r_SensorState > 1 && l_SensorState > 1){
+      if(calc_distance() < 30)  { //crossed the line
+        backward(50);
+      }
+      else{
+        forward(50);
+      }
+    }
+    else if (r_SensorState < 1 && l_SensorState < 1){
+      break;
+    }
+  } while(0);
+}
+
+int calc_distance(){
   digitalWrite(trig, LOW); //clear trigger pin from previous loop
   delayMicroseconds(5); //using Microseconds as the delay needs to be very very short - delay uses millisecond
   digitalWrite(trig, HIGH);
@@ -98,6 +122,8 @@ void calc_distance(){
   //duration contains sound travel time in microseconds
  
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+
+  return distance;  //distance in cm
 }
 
 void forward(int speed_factor) { // Turns both motor CW -> forward direction
