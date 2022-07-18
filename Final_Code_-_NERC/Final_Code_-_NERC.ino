@@ -4,25 +4,31 @@
 //3. Claw movement
 //4. Pins
 //5. Stop Inertia - Testing
+//6. Allignment speeds
 
 #include <Servo.h>
 
-Servo sM1,sM2,sM3,sM4,sM5;
+Servo sM1,sM2,sM3,sM4,sM5;  //Servo Motor objects
 
+//Defining Pins
+//Servo Pins
 #define servo1Pin 1
 #define servo2Pin 2
 #define servo3Pin 3
 #define servo4Pin 4
 #define servo5Pin 5
 
+//IR Sensor Pins
 #define fl_IR 6
 #define fr_IR 7
 #define l_IR 16
 #define r_IR 17
 
+//Ultrasonic Pins
 #define echo 18
 #define trig 19
 
+//Motor Driver Pins
 #define M1LH 8  //Left High
 #define M1RH 9
 #define M1LL 10
@@ -32,13 +38,13 @@ Servo sM1,sM2,sM3,sM4,sM5;
 #define M2LL 14
 #define M2RL 15
 
-int count = 1;
-int distance;
-long duration;
-
-int fl_SensorState;
+//Declaring Variables
+int count = 1;  //Tree number
+long duration;  //Time taken for sound wave to return - to calculate distance
+int distance;   //Wall distance
+int fl_SensorState;   //Front Left IR Sensor - Front Mounted
 int fr_SensorState;
-int l_SensorState;
+int l_SensorState;    //Left IR Sensor - Side Mounted
 int r_SensorState;
 
 void setup() {
@@ -61,51 +67,58 @@ void setup() {
  pinMode(M2RH, OUTPUT);
  pinMode(M2LL, OUTPUT);
  pinMode(M2RL, OUTPUT);
+ Serial.begin(9600);    //For debugging purposes
 }
 
 void loop() {
+//Reading Front IR Values to detect black lines
 fl_SensorState = digitalRead(fl_IR);
 fr_SensorState = digitalRead(fr_IR);
 
-if (fr_SensorState > 1 && fl_SensorState < 1)  {  //Turn Right
-  right(255);
-}
-else if (fr_SensorState < 1 && fl_SensorState > 1) {  //Left
+if (fr_SensorState == 1 && fl_SensorState  == 0)  {  //Right returns white, left returns black -> Turn Left
   left(255);
 }
-else if (fr_SensorState > 1 && fl_SensorState > 1) {  //Forward
+else if (fr_SensorState == 0 && fl_SensorState == 1) {  //Right
+  right(255);
+}
+else if (fr_SensorState == 1 && fl_SensorState == 1) {  //Forward
   forward(255);
 }
 
-else if (fr_SensorState < 1 && fl_SensorState < 1) {   //Stop 
-  stop_all();
-  allign();
-  harvest();
+else if (fr_SensorState == 0 && fl_SensorState == 0) {   //both return black = Stop
+  stop_all(); //Stops motors
+  allign(); //FInal adjustments
+  harvest();  //harvests fruit
+}
+
+else if (calc_distance <= 30) {   //intersection crossed
+  backward(255);
 }
 
 stop_all();
 delay(100);
+//Robot runs in intervals of 100 milliseconds
 }
 
 void allign(){
   do { 
     l_SensorState = digitalRead(l_IR);
     r_SensorState = digitalRead(r_IR);
-    if (r_SensorState > 1 && l_SensorState < 1){
-      right(100);
+    if (r_SensorState == 1 && l_SensorState == 0){
+      left(255);
     }
-    else if (r_SensorState > 1 && l_SensorState < 1){
-      left(100);
+    else if (r_SensorState == 1 && l_SensorState == 0){
+      right(255);
     }
-    else if (r_SensorState > 1 && l_SensorState > 1){
-      if(calc_distance() < 30)  { //crossed the line
-        backward(50);
+    else if (r_SensorState == 1 && l_SensorState == 1){
+      if(calc_distance() < 17)  { //crossed the line
+        backward(255);
       }
       else{
-        forward(50);
+        forward(255);
       }
     }
-    else if (r_SensorState < 1 && l_SensorState < 1){
+    else if (r_SensorState == 0 && l_SensorState == 0){
       break;
     }
   } while(0);
