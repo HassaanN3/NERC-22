@@ -9,4 +9,4 @@ TODO
 2. Default position
 3. Claw movement
 4. Pins
-5. Stop Inertia - Testing
+5. Cater to the inertia when stoping - Testing
