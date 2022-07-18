@@ -15,22 +15,31 @@ Servo sM1,sM2,sM3,sM4,sM5;
 #define servo4Pin 4
 #define servo5Pin 5
 
-#define left_IR 6
-#define right_IR 7
+#define fl_IR 6
+#define fr_IR 7
+#define l_IR 16
+#define r_IR 17
+
+#define echo 18
+#define trig 19
 
 #define M1LH 8  //Left High
 #define M1RH 9
 #define M1LL 10
 #define M1RL 11
-#define M2LH 2
-#define M2RH 5
-#define M2LL 16
-#define M2RL 17
+#define M2LH 12
+#define M2RH 13
+#define M2LL 14
+#define M2RL 15
 
 int count = 1;
+int distance;
+long duration;
 
-int left_SensorState;
-int right_SensorState;
+int fl_SensorState;
+int fr_SensorState;
+int l_SensorState;
+int r_SensorState;
 
 void setup() {
  sM1.attach(servo1Pin);
@@ -38,8 +47,12 @@ void setup() {
  sM3.attach(servo3Pin);
  sM4.attach(servo4Pin);
  sM5.attach(servo5Pin);
- pinMode(left_IR, INPUT);
- pinMode(right_IR, INPUT);  
+ pinMode(fl_IR, INPUT);
+ pinMode(fr_IR, INPUT); 
+ pinMode(l_IR, INPUT);
+ pinMode(r_IR, INPUT);
+ pinMode(echo, INPUT);
+ pinMode(trig, OUTPUT);
  pinMode(M1LH, OUTPUT);
  pinMode(M1RH, OUTPUT);
  pinMode(M1LL, OUTPUT);
@@ -48,30 +61,43 @@ void setup() {
  pinMode(M2RH, OUTPUT);
  pinMode(M2LL, OUTPUT);
  pinMode(M2RL, OUTPUT);
- Serial.begin(9600);
 }
 
 void loop() {
+  
+fl_SensorState = analogRead(fl_IR);
+fr_SensorState = analogRead(fr_IR);
 
-left_SensorState = analogRead(left_IR);
-right_SensorState = analogRead(right_IR);
-
-if (right_SensorState > 500 && left_SensorState < 500)  {  //Turn Right
+if (fr_SensorState > 500 && fl_SensorState < 500)  {  //Turn Right
   right(255);
 }
-else if (right_SensorState < 500 && left_SensorState > 500) {  //Left
+else if (fr_SensorState < 500 && fl_SensorState > 500) {  //Left
   left(255);
 }
-else if (right_SensorState > 500 && left_SensorState > 500) {  //Forward
+else if (fr_SensorState > 500 && fl_SensorState > 500) {  //Forward
   forward(255);
 }
 
-else if (right_SensorState < 500 && left_SensorState < 500) {   //Stop 
+else if (fr_SensorState < 500 && fl_SensorState < 500) {   //Stop 
   stop_all();
-  fruitPick();
+  harvest();
 }
 stop_all();
 delay(200);
+
+}
+
+void calc_distance(){
+  digitalWrite(trig, LOW); //clear trigger pin from previous loop
+  delayMicroseconds(5); //using Microseconds as the delay needs to be very very short - delay uses millisecond
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);  //trigger pin high for 10 microsecond - sound wave sent
+  digitalWrite(trig, LOW); //reset trigger pin
+
+  duration = pulseIn(echo, HIGH);  //reading and storing time it takes for echo
+  //duration contains sound travel time in microseconds
+ 
+  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
 }
 
 void forward(int speed_factor) { // Turns both motor CW -> forward direction
@@ -166,7 +192,7 @@ void clawClose(){
   sM5.write(180);
 }
 
-void fruitPick(){
+void harvest(){
   if(count == 1){
     tree1();
   }
@@ -182,74 +208,41 @@ void fruitPick(){
   count++;
 }
 
-void tree1(){
-  defaultPos();
-  //Fruit 1
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 2
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-}
-
-void tree2(){
-  defaultPos();
-  //Fruit 1
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 2
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 3
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-}
-
-void tree3(){
-  defaultPos();
-  //Fruit 1
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 2
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 3
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  clawOpen();
-  defaultPos();
-  //Fruit 4
-  armMove(0,0,0,0);
-  clawClose();
-  fruitPlace();
-  defaultPos();
+void fruitPick(int deg1,int deg2, int deg3, int deg4){
+  armMove(deg1,deg2,deg3,deg4);
+  clawClose();  
 }
 
 void fruitPlace(){
   armMove(0,0,0,0);
   clawOpen();
+}
+
+void tree1(){
+  fruitPick(0,0,0,0);  //1
+  fruitPlace();
+  fruitPick(0,0,0,0);  //2
+  fruitPlace();
+}
+
+void tree2(){
+  fruitPick(0,0,0,0);  //1
+  fruitPlace();
+  fruitPick(0,0,0,0);  //2
+  fruitPlace();
+  fruitPick(0,0,0,0);  //3
+  fruitPlace();
+}
+
+void tree3(){
+  fruitPick(0,0,0,0);  //1
+  fruitPlace();
+  fruitPick(0,0,0,0);  //2
+  fruitPlace();
+  fruitPick(0,0,0,0);  //3
+  fruitPlace();
+  fruitPick(0,0,0,0);  //4
+  fruitPlace();
 }
 
 void unload(){
